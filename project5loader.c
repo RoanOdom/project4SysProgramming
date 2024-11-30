@@ -3,17 +3,21 @@
 #include <string.h>
 
 int main(int argc, char *argv[]) {
+    // Ensure the correct number of arguments is provided
     if (argc != 4) {
         fprintf(stderr, "Usage: %s <object_file> <relocation_address> <SIC|SICXE>\n", argv[0]);
         return 1;
     }
 
     const char *filename = argv[1];
+
+    // Attempt to open the file to check if it exists and is accessible
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Error opening file");
         return 1;
     }
+    // Check if file has the right extensions
     if (strcmp(filename + strlen(filename) - 2, ".o") != 0) {
         fprintf(stderr, "Error: File must have .o extension.\n");
         return 1;
@@ -27,6 +31,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Determine if is SIC, SICXE, or unsupported
     int isSICXE = 0;
     if (strcmp(argv[3], "SIC") == 0) {
         isSICXE = 0;
@@ -41,6 +46,7 @@ int main(int argc, char *argv[]) {
 }
 
 void proccessObjectFile(const char *filename, int relocationAddress, int isSICXE) {
+    // Open file
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Error opening file");
@@ -54,6 +60,7 @@ void proccessObjectFile(const char *filename, int relocationAddress, int isSICXE
             continue;
         }
 
+        // Determine type of record
         char recordType = line[0];
         switch (recordType) {
             case 'H' || 'M':
@@ -62,6 +69,7 @@ void proccessObjectFile(const char *filename, int relocationAddress, int isSICXE
             case 'T': {
                 char *endptr;
                 int startAddress = strtol(line + 1, &endptr, 16);
+                // Check starting address
                 if (*endptr != '\0') {
                     fprintf(stderr, "Error: Invalid start address.\n");
                     fclose(file);
@@ -74,11 +82,13 @@ void proccessObjectFile(const char *filename, int relocationAddress, int isSICXE
             case 'E': {
                 char *endptr;
                 int startAddress = strtol(line + 1, &endptr, 16);
+                // Check starting address
                 if (*endptr != '\0') {
                     fprintf(stderr, "Error: Invalid start address.\n");
                     fclose(file);
                     exit(1);
                 }
+                // Relocate record
                 startAddress += relocationAddress;
                 printf("E%06X\n", startAddress);
                 break;
